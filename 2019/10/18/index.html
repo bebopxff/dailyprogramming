@@ -1,0 +1,90 @@
+<title>Note</title>
+<script src="https://cdn.bootcss.com/rxjs/6.5.3/rxjs.umd.min.js"></script>
+<script src="https://cdn.bootcss.com/showdown/1.9.0/showdown.min.js"></script>
+<style>
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+    }
+
+    #container {
+        height: 100vh;
+        box-sizing: content-box;
+        display: grid;
+        grid-template-columns: 50% 50%;
+    }
+
+    #container>* {
+        margin: 20px;
+        border: solid 3px blue;
+        font-size: 18px;
+        line-height: 1.44;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        padding: 5px;
+        overflow-y: scroll;
+    }
+
+    #editor {
+        grid-column: 1/2;
+        border-color: blueviolet;
+    }
+
+    #playground {
+        grid-column: 2/3;
+        word-wrap:break-word;
+    }
+</style>
+
+<div id="container">
+    <p style="display:none">Line Count: <span id="line-count"></span> | Char Count: <span id="char-count"></span></p>
+    <textarea id="editor"></textarea>
+    <div id="playground"></div>
+</div>
+
+<script>
+    // const convert = (text) => {
+    //     let converter = new showdown.Converter()
+    //     converter.setFlavor('github')
+    //     return converter.makeHtml(text)
+    // }
+
+    const render = new Worker('render.js');
+
+    const editor = document.querySelector("#editor")
+    const playground = document.querySelector("#playground")
+    const charCountEl = document.querySelector("#char-count")
+    const lineCountEl = document.querySelector("#line-count")
+    const storeKey = "simple-note"
+
+    const charCount = value => value.length
+    const lineCount = value => (value.match(/\n/g) || []).length
+
+    const editorInput$ = rxjs.fromEvent(editor, 'input').pipe(
+        rxjs.operators.map(event => {
+            // console.log(event.target.value)
+            return event.target.value
+        })
+    ).subscribe(value => {
+        // playground.innerHTML = convert(value)
+        render.postMessage(value)
+        localStorage.setItem(storeKey, value)
+        charCountEl.innerHTML = charCount(value)
+        lineCountEl.innerHTML = lineCount(value)
+    })
+
+    render.onmessage = e => {
+        playground.innerHTML = e.data
+    }
+
+    const editorOnload$ = rxjs.fromEvent(window, 'load').pipe(
+        rxjs.operators.map(event => localStorage.getItem(storeKey) || '')
+    ).subscribe(value => {
+        // console.log("on load " + value)
+        // playground.innerHTML = convert(value)
+        render.postMessage(value)
+        editor.value = value
+        charCountEl.innerHTML = charCount(value)
+        lineCountEl.innerHTML = lineCount(value)
+    })
+</script>
