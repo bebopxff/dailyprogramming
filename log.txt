@@ -1,0 +1,8 @@
+2019/10/19
+  https://raw.githubusercontent.com/jnoodle/common-programming-words-english-pronunciation/master/README.md
+2019/10/18
+2019/10/17
+
+download video
+    use Python request
+split audio from video by ffmpeg.js
